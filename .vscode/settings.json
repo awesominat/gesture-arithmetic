@@ -1,0 +1,4 @@
+{
+    "python.terminal.activateEnvironment": true,
+    "python.condaPath": "C:\\ProgramData\\miniconda3\\Scripts\\conda.exe",
+}
