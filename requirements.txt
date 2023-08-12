@@ -9,6 +9,7 @@ scipy
 torch
 torchvision
 tqdm
+mediapipe
 
 pandas
 seaborn
