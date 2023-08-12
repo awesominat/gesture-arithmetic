@@ -20,8 +20,24 @@ dict_to_len = {
     '8': 2,
     '9': 2,
     '10': 2,
-    '11': 2,
+    '11': 1,
     '12': 2,
+    '13': 1,
+
+    0: 1,
+    1: 1,
+    2: 1,
+    3: 1,
+    4: 1,
+    5: 1,
+    6: 2,
+    7: 2,
+    8: 2,
+    9: 2,
+    10: 2,
+    11: 1,
+    12: 2,
+    13: 1,
 }
 
 def process_image(image_path, label, ISTRAIN=False):
@@ -80,7 +96,7 @@ def process_image(image_path, label, ISTRAIN=False):
 
     if len(detection_result.handedness) != expected_len:
         print('discarding ' + image_path)
-        return 'DISCARD'
+        return np.zeros((1, 126))
     return flattened
 
 class CustomImageDataset(Dataset):
@@ -97,6 +113,8 @@ class CustomImageDataset(Dataset):
     def __getitem__(self, idx):
         img_path = self.image_paths[idx]
         label = self.labels[idx]
+
+
         return img_path, label
 
 def create_datasets(root_dir, val_samples_per_class=3, test_samples_per_class=3):
@@ -107,7 +125,8 @@ def create_datasets(root_dir, val_samples_per_class=3, test_samples_per_class=3)
         label = int(os.path.basename(path).split()[0])
         if label not in label_to_paths:
             label_to_paths[label] = []
-        label_to_paths[label].append(path)
+        to_append = process_image(path, label, True)
+        label_to_paths[label].append(path) # to_append
 
     train_paths, val_paths, test_paths = [], [], []
     for label, paths in label_to_paths.items():
@@ -115,7 +134,7 @@ def create_datasets(root_dir, val_samples_per_class=3, test_samples_per_class=3)
         val_paths.extend(paths[:val_samples_per_class])
         test_paths.extend(paths[val_samples_per_class:val_samples_per_class + test_samples_per_class])
         train_paths.extend(paths[val_samples_per_class + test_samples_per_class:])
-    
+
     train_labels = [int(os.path.basename(path).split()[0]) for path in train_paths]
     val_labels = [int(os.path.basename(path).split()[0]) for path in val_paths]
     test_labels = [int(os.path.basename(path).split()[0]) for path in test_paths]
@@ -123,5 +142,5 @@ def create_datasets(root_dir, val_samples_per_class=3, test_samples_per_class=3)
     train_dataset = CustomImageDataset(train_paths, train_labels)
     val_dataset = CustomImageDataset(val_paths, val_labels)
     test_dataset = CustomImageDataset(test_paths, test_labels)
-    
+
     return train_dataset, val_dataset, test_dataset

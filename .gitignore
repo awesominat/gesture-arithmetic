@@ -2,3 +2,4 @@ train_numbers/
 yolov8n.pt
 runs/
 __pycache__/
+new_train_data/

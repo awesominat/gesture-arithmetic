@@ -1,10 +1,12 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 
 class GestureModel(nn.Module):
     def __init__(self, classes):
         super().__init__()
-        self.linear1 = nn.Linear(126, 3000)
+        self.linear1 = nn.Linear(126, 3000).to(torch.float64)
         self.norm1 = nn.BatchNorm1d(3000)
         self.dropout1 = nn.Dropout(.8)
 
@@ -30,6 +32,5 @@ class GestureModel(nn.Module):
 
         x = self.linear5(x)
         # F.log_softmax(x, dim = 1)
-        # no need for softmax as categorical cross entropy loss does it for us 
-        return x 
-        
+        # no need for softmax as categorical cross entropy loss does it for us
+        return x
