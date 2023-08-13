@@ -6,9 +6,9 @@ This is an open-source implementation of a gesture detection model that uses the
 
 * In models/ are two pickled SVM models, one of which was trained without data augmentation and performs poorly on right-hand gestures (57% accuracy when testing); after applying data augmentation to the landmarks (horizontal flip) and their flattened versions, the test set has 100% accuracy on both left and right hand (shown in train.ipynb).
 
-https://github.com/awesominat/gesture-arithmetic/assets/110934811/e16571d4-714c-4f34-88e3-54ceb0478a91
+https://github.com/awesominat/gesture-arithmetic/assets/110934811/05e43615-8b26-4b64-8d18-161bbeaca05a
 
-https://github.com/awesominat/gesture-arithmetic/assets/110934811/a18faffa-4c5c-48e2-97e2-16a4a461896e
+https://github.com/awesominat/gesture-arithmetic/assets/110934811/ec0e989d-6636-4a34-9d5d-8fe1ed4d9d54
 
 ## Salient Features
 * Waits for 5 loop iterations before confirming input
