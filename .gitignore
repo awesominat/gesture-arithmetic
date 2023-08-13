@@ -3,3 +3,5 @@ yolov8n.pt
 runs/
 __pycache__/
 new_train_data/
+.ipynb_checkpoints/
+.vscode/
