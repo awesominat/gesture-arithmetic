@@ -86,7 +86,7 @@ def process_image(image_path, label, ISTRAIN=False):
             concat_displays += display_name
         else:
             concat_displays += ', ' + display_name
-        hand_world_landmarks_tuples[ind, :] = [(obj.x, obj.y) for obj in detection_result.hand_world_landmarks[running_ind]] # hand_landmarks hand_world_landmarks
+        hand_world_landmarks_tuples[ind, :] = [(obj.x, obj.y) for obj in detection_result.hand_landmarks[running_ind]]
         # hand_world_landmarks_tuples[ind, :] = [(obj.x, obj.y, obj.z) for obj in detection_result.hand_world_landmarks[running_ind]]
         running_ind += 1
 
@@ -95,14 +95,51 @@ def process_image(image_path, label, ISTRAIN=False):
 
     # flatten the array to pass into the nn
     # flattened = hand_world_landmarks_tuples.reshape((126, 1))
-    flattened = torch.flatten(torch.from_numpy(hand_world_landmarks_tuples))
+    # flattened = torch.flatten(torch.from_numpy(hand_world_landmarks_tuples))
 
     # if len(detection_result.handedness) != expected_len:
     #     print('discarding ' + image_path)
     #     return np.zeros((1, 84))
-    return flattened
+    return hand_world_landmarks_tuples
 
-def create_datasets(root_dir, test_samples_per_class=3, transform=None):
+def augment_landmarks(landmarks, flip_horizontal_prob=0.5, flip_vertical_prob=0.5, jitter_std=0.002):
+    if random.random() < flip_horizontal_prob:
+        landmarks[:, :, 0] = -landmarks[:, :, 0]
+
+    if random.random() < flip_vertical_prob:
+        landmarks[:, :, 1] = -landmarks[:, :, 1]
+
+    non_zero_mask = landmarks != 0
+    noise = torch.randn_like(landmarks) * jitter_std
+    landmarks += noise * non_zero_mask.float()
+
+    return landmarks
+
+class CustomImageDataset(Dataset):
+    image_paths: str
+    labels: list
+
+    def __init__(self, image_paths, labels, transform=None):
+        self.image_paths = image_paths
+        self.labels = labels
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        img_path = self.image_paths[idx]
+        label = self.labels[idx]
+        landmarks = torch.from_numpy(process_image(img_path, label, True))
+
+        # if self.transform:
+        #     landmarks = augment_landmarks(landmarks)
+
+        flattened = torch.flatten(landmarks).to(torch.float32).to('cuda')
+
+        return flattened, label
+
+def create_datasets(root_dir, val_samples_per_class=3, test_samples_per_class=3, transform=None):
     all_image_paths = glob.glob(os.path.join(root_dir, '*.jpg'))
     label_to_paths = {}
     
@@ -110,23 +147,22 @@ def create_datasets(root_dir, test_samples_per_class=3, transform=None):
         label = int(os.path.basename(path).split()[0])
         if label not in label_to_paths:
             label_to_paths[label] = []
-        label_to_paths[label].append(path)
+        # to_append = process_image(path, label, True)
+        label_to_paths[label].append(path) # to_append
 
-    train_paths, test_paths = [], []
+    train_paths, val_paths, test_paths = [], [], []
     for label, paths in label_to_paths.items():
         random.shuffle(paths)
-        test_paths.extend(paths[:test_samples_per_class])
-        train_paths.extend(paths[test_samples_per_class:])
+        val_paths.extend(paths[:val_samples_per_class])
+        test_paths.extend(paths[val_samples_per_class:val_samples_per_class + test_samples_per_class])
+        train_paths.extend(paths[val_samples_per_class + test_samples_per_class:])
 
     train_labels = [int(os.path.basename(path).split()[0]) for path in train_paths]
+    val_labels = [int(os.path.basename(path).split()[0]) for path in val_paths]
     test_labels = [int(os.path.basename(path).split()[0]) for path in test_paths]
 
-    combined_train = list(zip(train_paths, train_labels))
-    random.shuffle(combined_train)
-    # train_paths[:], train_labels[:] = zip(*combined_train)
+    train_dataset = CustomImageDataset(train_paths, train_labels, transform)
+    val_dataset = CustomImageDataset(val_paths, val_labels, transform)
+    test_dataset = CustomImageDataset(test_paths, test_labels, transform)
 
-    combined_test = list(zip(test_paths, test_labels))
-    random.shuffle(combined_test)
-    # test_paths[:], test_labels[:] = zip(*combined_test)
-
-    return combined_train, combined_test
+    return train_dataset, val_dataset, test_dataset
