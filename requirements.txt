@@ -1,18 +1,17 @@
-ultralytics
 matplotlib
 numpy
-opencv-python
 pillow
 pyyaml
 requests
 scipy
-torch
+pytorch
 torchvision
 tqdm
-mediapipe
 
 pandas
 seaborn
 
 psutil
 py-cpuinfo
+ipykernel
+scikit-learn
